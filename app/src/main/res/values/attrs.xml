@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CalendarView">
+        <attr name="year" format="integer" />
+        <attr name="month" format="integer" />
+        <attr name="showYearMonthLabel" format="boolean" />
+        <attr name="isMonthAlignFirstData" format="boolean" />
+    </declare-styleable>
+</resources>
