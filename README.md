@@ -17,15 +17,15 @@
 - `app:month`: 月份
 - `app:isMonthAlignFirstData`: 標示月份標籤是否對齊月份第一天
 `app:showYearMonthLabel="true"`
-![](https://bitbucket.askey.com.tw:8443/projects/DBMOB/repos/calendarview/browse/type3.png =200x) 
+![](https://bitbucket.askey.com.tw:8443/projects/DBMOB/repos/calendarview/browse/type3.png) 
 
 - `app:showYearMonthLabel`: 是否顯示月份標籤還是星期標籤
 
 `app:showYearMonthLabel="true"`
-![](https://bitbucket.askey.com.tw:8443/projects/DBMOB/repos/calendarview/browse/type2.png =200x)  
+![](https://bitbucket.askey.com.tw:8443/projects/DBMOB/repos/calendarview/browse/type2.png)  
 
 `app:showYearMonthLabel="false"`
-![](https://bitbucket.askey.com.tw:8443/projects/DBMOB/repos/calendarview/browse/type1.png =200x)  
+![](https://bitbucket.askey.com.tw:8443/projects/DBMOB/repos/calendarview/browse/type1.png)  
 
 ## 程式碼
 ```java
