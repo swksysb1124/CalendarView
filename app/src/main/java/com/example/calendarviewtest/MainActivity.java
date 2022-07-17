@@ -28,8 +28,6 @@ public class MainActivity extends AppCompatActivity implements CalendarView.OnDa
 
         toast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
 
-        CalendarView calendar = findViewById(R.id.calendar);
-        calendar.setDateSelectedListener(this);
         setCalendarListView();
     }
 

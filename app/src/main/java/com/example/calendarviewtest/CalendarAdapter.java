@@ -26,7 +26,6 @@ public class CalendarAdapter
 
     @NonNull
     @Override
-
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_calendar, parent, false);
@@ -38,7 +37,6 @@ public class CalendarAdapter
         ViewHolder vh = (ViewHolder) holder;
         YearMonth ym = list.get(position);
         vh.calendarView.setYearAndMonth(ym.year, ym.month);
-        vh.calendarView.requestLayout(); // make view to call onMeasure() again!
         if(onDateSelectedListener != null) {
             vh.calendarView.setDateSelectedListener(onDateSelectedListener);
         }

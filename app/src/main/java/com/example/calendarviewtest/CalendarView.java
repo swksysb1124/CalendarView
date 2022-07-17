@@ -41,17 +41,19 @@ public class CalendarView extends View {
     int month;// attr: month
     boolean showMonthLabel = false; // attr: showMonthLabel; if show month label, hide weekday label.
     boolean isMonthAlignFirstData = false; // attr: isMonthAlignFirstData
+    float heightWidthRatio = DEFAULT_HEIGHT_WIDTH_RATIO; // attr: heightWidthRatio
 
     private int[][] calendarTable; // store calendarTable[week][day] = date
-
     private Calendar calendar;
     private Date today;
+    boolean hasPrevMonthDates = false;
+    boolean hasNextMonthDates = false;
 
     private Paint paint = new Paint();
 
     private int textSize = DEFAULT_TEXT_SIZE; // dip
     private int backgroundColor = DEFAULT_BACKGROUND_COLOR;
-    private float heightWidthRatio = DEFAULT_HEIGHT_WIDTH_RATIO; // height / width
+    private int labelBarHeight = 50;
 
     private float currentTouchX; // simulate click event
     private float currentTouchY; // simulate click event
@@ -80,6 +82,7 @@ public class CalendarView extends View {
             month = a.getInteger(R.styleable.CalendarView_month, DEFAULT_MONTH);
             showMonthLabel = a.getBoolean(R.styleable.CalendarView_showYearMonthLabel, false);
             isMonthAlignFirstData = a.getBoolean(R.styleable.CalendarView_isMonthAlignFirstData, false);
+            heightWidthRatio = a.getFloat(R.styleable.CalendarView_heightWidthRatio, DEFAULT_HEIGHT_WIDTH_RATIO);
         } finally {
             a.recycle();
         }
@@ -96,6 +99,7 @@ public class CalendarView extends View {
         this.year = year;
         this.month = month;
         invalidate();
+        requestLayout();
     }
 
     private void setPaints() {
@@ -125,7 +129,12 @@ public class CalendarView extends View {
 
         calendarTable = new int[lastWeek + 1][7];
 
-        int defaultHeight = (int) (width / 7 * heightWidthRatio * (2 + lastWeek));
+        float xGridWidth = (float) width / 7;
+        float yGridWidth = xGridWidth * heightWidthRatio;
+        float labelBarHeightInDb = DensityUtil.dip2px(getContext(), labelBarHeight);
+
+        int defaultHeight = (int) (labelBarHeightInDb + yGridWidth * (1 + lastWeek) +
+                DensityUtil.dip2px(getContext(), 2));
 
         int height = measureDimension(defaultHeight, heightMeasureSpec);
         setMeasuredDimension(width, height);
@@ -156,17 +165,18 @@ public class CalendarView extends View {
         float yGridWidth = (float) (xGridWidth * heightWidthRatio);
         float xOffset = xGridWidth / 2;
         float yOffset = yGridWidth / 2;
+        float labelBarHeightInDb = DensityUtil.dip2px(getContext(), labelBarHeight);
 
         calendar.set(year, month - 1, 1);
 
         int weekDay = calendar.get(Calendar.DAY_OF_WEEK); // sun(1) ~ sat(7)
-        int dayOfFirstDate = weekDay - 1;
+        int dayOfFirstDate = weekDay - 1; // sun(0) ~ sat(6)
         int daysOfMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-        drawLabelBackground(canvas, yGridWidth, COLOR_MAGENTA);
+        drawLabelBackground(canvas, COLOR_MAGENTA);
 
         if (!showMonthLabel) {
-            drawWeekDayLabel(canvas, xGridWidth, yGridWidth, xOffset, yOffset, weekdayNames);
+            drawWeekDayLabel(canvas, xGridWidth, yGridWidth, xOffset, labelBarHeightInDb / 2);
         }
         for (int date = 1; date <= daysOfMonth; date++) {
             int day = (dayOfFirstDate + date - 1) % 7; // x
@@ -176,13 +186,43 @@ public class CalendarView extends View {
 
             if (showMonthLabel) {
                 if (date == 1) {
-                    drawYearMonthLabel(canvas, xGridWidth, xOffset, yOffset, day, Color.WHITE);
+                    drawYearMonthLabel(canvas, xGridWidth,
+                            xOffset, labelBarHeightInDb / 2, day, Color.WHITE);
                 }
             }
             if (day == 0 || day == 6) { // weekend
-                drawWeekend(canvas, xGridWidth, yGridWidth, xOffset, yOffset, date, day, week);
+                drawWeekend(canvas, xGridWidth, yGridWidth,
+                        xOffset, yOffset, date, day, week);
             } else {
-                drawDay(canvas, xGridWidth, yGridWidth, xOffset, yOffset, date, day, week);
+                drawDay(canvas, xGridWidth, yGridWidth,
+                        xOffset, yOffset, date, day, week);
+            }
+        }
+        // last dates of previous month
+        hasPrevMonthDates = dayOfFirstDate != 0;
+        if (hasPrevMonthDates) {
+            calendar.set(year, month - 2, 1);
+            int lastDateOfPrevMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+            int dayOfLastDateOfPrevMonth = dayOfFirstDate - 1; // sun(0) ~ sat(6)
+            for (int i = dayOfLastDateOfPrevMonth; i >= 0; i--) {
+                drawDayValue(canvas, lastDateOfPrevMonth, xOffset + i * xGridWidth, labelBarHeightInDb + yOffset, yGridWidth, Color.LTGRAY);
+                lastDateOfPrevMonth--;
+            }
+        }
+
+        // first dates of next month
+        int lastWeek = (dayOfFirstDate + daysOfMonth - 1) / 7;
+        int dayOfLastDate = (dayOfFirstDate + daysOfMonth - 1) % 7;
+        hasNextMonthDates = dayOfLastDate != 6;
+        if (hasNextMonthDates) {
+            calendar.set(year, month, 1);
+            int firstDateOfNextMonth = 1;
+            int dayOfFirstDateOfNextMonth = dayOfLastDate + 1; // sun(0) ~ sat(6)
+            for (int i = dayOfFirstDateOfNextMonth; i < 7; i++) {
+                drawDayValue(canvas, firstDateOfNextMonth,
+                        xOffset + i * xGridWidth,
+                        labelBarHeightInDb + yOffset + lastWeek * yGridWidth, yGridWidth, Color.LTGRAY);
+                firstDateOfNextMonth++;
             }
         }
     }
@@ -191,7 +231,7 @@ public class CalendarView extends View {
         canvas.drawColor(backgroundColor);
     }
 
-    private void drawYearMonthLabel(Canvas canvas, float xGridWidth, float xOffset, float yOffset, int day, int color) {
+    protected void drawYearMonthLabel(Canvas canvas, float xGridWidth, float xOffset, float yOffset, int day, int color) {
         paint.setColor(color);
         paint.setTextAlign(Paint.Align.LEFT);
         String text = monthNames[month - 1] + " " + year;
@@ -205,15 +245,16 @@ public class CalendarView extends View {
         canvas.drawText(text, x, y, paint);
     }
 
-    private void drawLabelBackground(Canvas canvas, float yGridWidth, int color) {
+    private void drawLabelBackground(Canvas canvas, int color) {
         paint.setColor(color);
         paint.setStyle(Paint.Style.FILL);
-        canvas.drawRect(new Rect(0, 0, getWidth(), (int) yGridWidth), paint);
+        float labelBarHeightInDb = DensityUtil.dip2px(getContext(), labelBarHeight);
+        canvas.drawRect(new Rect(0, 0, getWidth(), (int) labelBarHeightInDb), paint);
     }
 
-    private void drawWeekDayLabel(Canvas canvas, float xGridWidth, float yGridWidth, float xOffset, float yOffset, String[] labels) {
+    private void drawWeekDayLabel(Canvas canvas, float xGridWidth, float yGridWidth, float xOffset, float yOffset) {
         for (int i = 0; i < 7; i++) {
-            String text = labels[i];
+            String text = CalendarView.weekdayNames[i];
 
             float x = i * xGridWidth + xOffset;
             float y = yOffset;
@@ -233,53 +274,56 @@ public class CalendarView extends View {
     private void drawDay(Canvas canvas, float xGridWidth, float yGridWidth,
                          float xOffset, float yOffset,
                          int date, int day, int week) {
-
-        int backgroundColor = COLOR_LIGHT_BLUE;
-        int textColor = Color.BLACK;
-        drawDayOfWeek(canvas, xGridWidth, yGridWidth, xOffset, yOffset, date, day, week, backgroundColor, textColor);
+        drawDayOfWeek(canvas, xGridWidth, yGridWidth, xOffset, yOffset, date, day, week, COLOR_LIGHT_BLUE, Color.BLACK);
     }
 
     private void drawWeekend(Canvas canvas, float xGridWidth, float yGridWidth,
                              float xOffset, float yOffset,
                              int date, int day, int week) {
-
-        int backgroundColor = COLOR_LIGHT_GRAY;
-        int textColor = Color.GRAY;
-        drawDayOfWeek(canvas, xGridWidth, yGridWidth, xOffset, yOffset, date, day, week, backgroundColor, textColor);
+        drawDayOfWeek(canvas, xGridWidth, yGridWidth, xOffset, yOffset, date, day, week, COLOR_LIGHT_GRAY, Color.GRAY);
     }
 
     private void drawDayOfWeek(Canvas canvas, float xGridWidth, float yGridWidth,
                                float xOffset, float yOffset,
                                int date, int day, int week,
                                int backgroundColor, int textColor) {
+        float labelBarHeightInDb = DensityUtil.dip2px(getContext(), labelBarHeight);
 
         float x = xOffset + day * xGridWidth;
-        float y = yOffset + (week + 1) * yGridWidth;
-
-        // today
-        if (today.year == year && today.month == month
-                && today.date == date) {
-            textColor = COLOR_MAGENTA;
-        }
+        float y = yOffset + week * yGridWidth + labelBarHeightInDb;
 
         // background
-        int padding = DensityUtil.dip2px(getContext(), 2); // 1
-        int roundRadius = DensityUtil.dip2px(getContext(), 100); // 10
+        int padding = DensityUtil.dip2px(getContext(), 0); // 1
+        int roundRadius = DensityUtil.dip2px(getContext(), 0); // 10
         drawGridRoundRectBackground(canvas, xGridWidth, yGridWidth, x, y, padding, roundRadius, backgroundColor, true);
 
         // value
-        drawDayValue(canvas, date, x, y, textColor);
+        drawDayValue(canvas, date, x, y, yGridWidth, textColor);
+
+        // today
+        if (today.year == year && today.month == month && today.date == date) {
+            paint.setColor(COLOR_MAGENTA);
+            paint.setTextSize(DensityUtil.dip2px(getContext(), textSize - 2));
+            canvas.drawText("today", x, y + yGridWidth / 4, paint);
+        }
     }
 
-    private void drawDayValue(Canvas canvas, int day, float x, float y, int color) {
+    private void drawDayValue(Canvas canvas, int date, float x, float y, float yGridWidth, int color) {
         paint.setColor(color);
+        paint.setTextSize(DensityUtil.dip2px(getContext(), textSize));
         paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
 
-        String text = String.valueOf(day);
+        String text = String.valueOf(date);
         float y1 = getTextVerticalOffset(text);
-        canvas.drawText(text, x, y + y1, paint);
+
+
+        if (heightWidthRatio <= 1) {
+            canvas.drawText(text, x, y + y1, paint);
+        } else {
+            canvas.drawText(text, x, y + y1 - yGridWidth / 4, paint);
+        }
     }
 
     private float getTextVerticalOffset(String text) {
@@ -298,7 +342,7 @@ public class CalendarView extends View {
         float bottom = centerY + height / 2 - padding;
         canvas.drawRoundRect(left, top, right, bottom,
                 roundRadius, roundRadius, paint);
-        if(border) {
+        if (border) {
             paint.setStyle(Paint.Style.STROKE);
             paint.setColor(Color.GRAY);
             canvas.drawRoundRect(left, top, right, bottom,
@@ -329,7 +373,7 @@ public class CalendarView extends View {
             float yGridWidth = (xGridWidth * heightWidthRatio);
 
             int d = (int) (event.getX() / xGridWidth);
-            int w = (int) (event.getY() / yGridWidth) - 1; // -1 because of label height
+            int w = (int) ((event.getY() - DensityUtil.dip2px(getContext(), labelBarHeight)) / yGridWidth); // -1 because of label height
 
             if (d >= 0 && d < 7
                     && w >= 0 && w <= calendarTable.length) {
