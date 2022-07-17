@@ -5,6 +5,6 @@
         <attr name="month" format="integer" />
         <attr name="showYearMonthLabel" format="boolean" />
         <attr name="isMonthAlignFirstData" format="boolean" />
-        <attr name="heightWidthRatio" format="float" />
+        <attr name="gridHeightWidthRatio" format="float" />
     </declare-styleable>
 </resources>

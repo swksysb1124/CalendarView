@@ -41,7 +41,7 @@ public class CalendarView extends View {
     int month;// attr: month
     boolean showMonthLabel = false; // attr: showMonthLabel; if show month label, hide weekday label.
     boolean isMonthAlignFirstData = false; // attr: isMonthAlignFirstData
-    float heightWidthRatio = DEFAULT_HEIGHT_WIDTH_RATIO; // attr: heightWidthRatio
+    float gridHeightWidthRatio = DEFAULT_HEIGHT_WIDTH_RATIO; // attr: heightWidthRatio
 
     private int[][] calendarTable; // store calendarTable[week][day] = date
     private Calendar calendar;
@@ -82,7 +82,7 @@ public class CalendarView extends View {
             month = a.getInteger(R.styleable.CalendarView_month, DEFAULT_MONTH);
             showMonthLabel = a.getBoolean(R.styleable.CalendarView_showYearMonthLabel, false);
             isMonthAlignFirstData = a.getBoolean(R.styleable.CalendarView_isMonthAlignFirstData, false);
-            heightWidthRatio = a.getFloat(R.styleable.CalendarView_heightWidthRatio, DEFAULT_HEIGHT_WIDTH_RATIO);
+            gridHeightWidthRatio = a.getFloat(R.styleable.CalendarView_gridHeightWidthRatio, DEFAULT_HEIGHT_WIDTH_RATIO);
         } finally {
             a.recycle();
         }
@@ -130,7 +130,7 @@ public class CalendarView extends View {
         calendarTable = new int[lastWeek + 1][7];
 
         float xGridWidth = (float) width / 7;
-        float yGridWidth = xGridWidth * heightWidthRatio;
+        float yGridWidth = xGridWidth * gridHeightWidthRatio;
         float labelBarHeightInDb = DensityUtil.dip2px(getContext(), labelBarHeight);
 
         int defaultHeight = (int) (labelBarHeightInDb + yGridWidth * (1 + lastWeek) +
@@ -162,7 +162,7 @@ public class CalendarView extends View {
         drawBackgroundColor(canvas);
 
         float xGridWidth = (float) getWidth() / 7;
-        float yGridWidth = (float) (xGridWidth * heightWidthRatio);
+        float yGridWidth = (float) (xGridWidth * gridHeightWidthRatio);
         float xOffset = xGridWidth / 2;
         float yOffset = yGridWidth / 2;
         float labelBarHeightInDb = DensityUtil.dip2px(getContext(), labelBarHeight);
@@ -319,7 +319,7 @@ public class CalendarView extends View {
         float y1 = getTextVerticalOffset(text);
 
 
-        if (heightWidthRatio <= 1) {
+        if (gridHeightWidthRatio <= 1) {
             canvas.drawText(text, x, y + y1, paint);
         } else {
             canvas.drawText(text, x, y + y1 - yGridWidth / 4, paint);
@@ -370,7 +370,7 @@ public class CalendarView extends View {
     private void processItemClickEvent(MotionEvent event) {
         if (checkSamePointTouch(event)) {
             float xGridWidth = (float) getWidth() / 7;
-            float yGridWidth = (xGridWidth * heightWidthRatio);
+            float yGridWidth = (xGridWidth * gridHeightWidthRatio);
 
             int d = (int) (event.getX() / xGridWidth);
             int w = (int) ((event.getY() - DensityUtil.dip2px(getContext(), labelBarHeight)) / yGridWidth); // -1 because of label height
